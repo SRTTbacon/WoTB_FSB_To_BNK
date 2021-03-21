@@ -260,6 +260,7 @@ namespace WoTB_Voice_Mod_Creater.FMOD
                     }
                 }
                 SubSound.release();
+                MainSound.release();
             }
             MainSound.release();
             return Name_List;

@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Input;
 using WK.Libraries.BetterFolderBrowserNS;
 using WoTB_Voice_Mod_Creater;
 using WoTB_Voice_Mod_Creater.Class;
@@ -25,10 +26,13 @@ namespace WoTB_FSB_To_BNK
         string Voice_FSB_File = "";
         bool IsClosing = false;
         bool IsMessageShowing = false;
-        Cauldron.FMOD.EVENT_LOADINFO ELI = new Cauldron.FMOD.EVENT_LOADINFO();
-        Cauldron.FMOD.EventProject EP = new Cauldron.FMOD.EventProject();
-        Cauldron.FMOD.EventGroup EG = new Cauldron.FMOD.EventGroup();
-        Cauldron.FMOD.Event FE = new Cauldron.FMOD.Event();
+        bool IsMouseDown = false;
+        bool IsPause = false;
+        bool IsPlaying = false;
+        bool IsLocationMouseChange = false;
+        FMOD_API.Sound MainSound = new FMOD_API.Sound();
+        FMOD_API.Sound SubSound = new FMOD_API.Sound();
+        FMOD_API.Channel FModChannel = new FMOD_API.Channel();
         public MainCode()
         {
             InitializeComponent();
@@ -55,7 +59,37 @@ namespace WoTB_FSB_To_BNK
             System.Drawing.Size MaxSize = Screen.PrimaryScreen.WorkingArea.Size;
             MaxWidth = MaxSize.Width;
             MaxHeight = MaxSize.Height;
+            //Sliderにクリック判定がないため強制的に判定を付ける
+            Location_S.AddHandler(MouseDownEvent, new MouseButtonEventHandler(Location_MouseDown), true);
+            Location_S.AddHandler(MouseUpEvent, new MouseButtonEventHandler(Location_MouseUp), true);
+            Volume_S.Value = 50;
+            Position_Change();
             Window_Show();
+        }
+        async void Position_Change()
+        {
+            //サウンドの位置をSliderに反映
+            while (!IsClosing)
+            {
+                if (Voice_FSB_File != "")
+                {
+                    bool IsPaused = false;
+                    FModChannel.getPaused(ref IsPaused);
+                    FModChannel.isPlaying(ref IsPlaying);
+                    if (!IsMouseDown)
+                    {
+                        if (!IsPaused && !IsPlaying)
+                        {
+                            Sound_Start();
+                        }
+                        if (!IsPaused && !IsLocationMouseChange)
+                        {
+                            Set_Position_TextBlock(true);
+                        }
+                    }
+                }
+                await Task.Delay(1000 / 30);
+            }
         }
         //変更後のファイル名の定義
         void Voice_Rename_Init()
@@ -106,12 +140,15 @@ namespace WoTB_FSB_To_BNK
             if (!IsClosing)
             {
                 IsClosing = true;
+                float Volume_Down = (float)(Volume_S.Value / 100 / 30);
                 while (Opacity > 0)
                 {
                     Opacity -= Sub_Code.Window_Feed_Time;
+                    float Volume_Now = 1f;
+                    FModChannel.getVolume(ref Volume_Now);
+                    FModChannel.setVolume(Volume_Now - Volume_Down);
                     await Task.Delay(1000 / 60);
                 }
-                IsClosing = false;
                 System.Windows.Application.Current.Shutdown();
             }
         }
@@ -156,6 +193,11 @@ namespace WoTB_FSB_To_BNK
             {
                 Sub_Code.Set_OpenFile_Path(Path.GetDirectoryName(ofd.FileName));
                 bool IsVoiceExist = false;
+                SubSound.release();
+                MainSound.release();
+                Location_T.Text = "00:00";
+                Location_S.Value = 0;
+                Location_S.Maximum = 0;
                 FMod_List_Clear();
                 List<string> Voices = Fmod_Class.FSB_GetNames(ofd.FileName);
                 foreach (string File_Now in Voices)
@@ -173,11 +215,11 @@ namespace WoTB_FSB_To_BNK
                     Voice_Add_List.Items.Clear();
                     return;
                 }
-                Voices.Clear();
                 Voice_FSB_File = ofd.FileName;
                 FSB_Details_L.Items[0] = "FSB File:" + Path.GetFileName(ofd.FileName);
-                FSB_Details_L.Items[1] = "Number of voices:" + Fmod_Class.FSB_GetLength(ofd.FileName) + "個";
+                FSB_Details_L.Items[1] = "Number of voices:" + Voices.Count + "個";
                 Voice_Select_T.Text = Path.GetFileName(ofd.FileName);
+                Voices.Clear();
             }
         }
         //音声、BGMともに初期化
@@ -188,8 +230,13 @@ namespace WoTB_FSB_To_BNK
             MessageBoxResult result = System.Windows.MessageBox.Show("Do you want to clear the contents?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Exclamation, MessageBoxResult.No);
             if (result == MessageBoxResult.Yes)
             {
-                FMod_List_Clear();
                 Voice_FSB_File = "";
+                FModChannel.setPaused(true);
+                FMod_List_Clear();
+                Location_S.Value = 0;
+                Location_S.Maximum = 0;
+                Location_T.Text = "00:00";
+                FModChannel = new FMOD_API.Channel();
             }
         }
         //ヘルプ
@@ -209,6 +256,11 @@ namespace WoTB_FSB_To_BNK
         {
             if (IsClosing || Opacity < 1)
                 return;
+            if (Voice_FSB_File == "")
+            {
+                Message_Feed_Out("FSB file is not selected.");
+                return;
+            }
             try
             {
                 IsClosing = true;
@@ -220,6 +272,8 @@ namespace WoTB_FSB_To_BNK
                 };
                 if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
+                    FModChannel.setPaused(true);
+                    await Task.Delay(50);
                     Sub_Code.Set_Directory_Path(sfd.SelectedFolder);
                     FSB_Details_L.Items[2] = "Output:" + sfd.SelectedFolder.Substring(sfd.SelectedFolder.LastIndexOf("\\") + 1);
                     if (Directory.Exists(Voice_Set.Special_Path + "/Wwise/FSB_Extract_Voices_TMP"))
@@ -294,9 +348,9 @@ namespace WoTB_FSB_To_BNK
                         Message_T.Text = "Encoding to DVPL format...";
                         await Task.Delay(50);
                         DVPL.DVPL_Pack(sfd.SelectedFolder + "/voiceover_crew.bnk", sfd.SelectedFolder + "/voiceover_crew.bnk.dvpl", true);
-                        DVPL.DVPL_Pack(sfd.SelectedFolder + "/ui_battle.bnk", sfd.SelectedFolder + "/ui_battle.bnk.dvpl", true);
+                        /*DVPL.DVPL_Pack(sfd.SelectedFolder + "/ui_battle.bnk", sfd.SelectedFolder + "/ui_battle.bnk.dvpl", true);
                         DVPL.DVPL_Pack(sfd.SelectedFolder + "/ui_chat_quick_commands.bnk", sfd.SelectedFolder + "/ui_chat_quick_commands.bnk.dvpl", true);
-                        DVPL.DVPL_Pack(sfd.SelectedFolder + "/reload.bnk", sfd.SelectedFolder + "/reload.bnk.dvpl", true);
+                        DVPL.DVPL_Pack(sfd.SelectedFolder + "/reload.bnk", sfd.SelectedFolder + "/reload.bnk.dvpl", true);*/
                     }
                     Message_Feed_Out("The operation is complete. If the bnk file is extremely small in size, it may have failed.");
                 }
@@ -308,17 +362,141 @@ namespace WoTB_FSB_To_BNK
             }
             IsClosing = false;
         }
-        private void FSB_Details_L_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void FSB_Details_L_MouseDown(object sender, MouseButtonEventArgs e)
         {
             FSB_Details_L.SelectedIndex = -1;
         }
         private void Play_B_Click(object sender, RoutedEventArgs e)
         {
-
+            if (IsClosing)
+            {
+                return;
+            }
+            if (Voice_Add_List.SelectedIndex == -1)
+            {
+                Message_Feed_Out("Voice File is not selected.");
+                return;
+            }
+            FModChannel.setPaused(false);
         }
         private void Stop_B_Click(object sender, RoutedEventArgs e)
         {
-
+            FModChannel.setPaused(true);
+        }
+        private void Voice_Add_List_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (IsClosing || Voice_Add_List.SelectedIndex == -1)
+            {
+                return;
+            }
+            Sound_Start();
+            uint Sound_Length = 0;
+            SubSound.getLength(ref Sound_Length, FMOD_API.TIMEUNIT.MS);
+            Location_S.Value = 0;
+            Location_S.Maximum = Sound_Length;
+            Location_T.Text = "00:00";
+        }
+        private void Volume_S_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Volume_T.Text = "Volume:" + (int)Volume_S.Value;
+            FModChannel.setVolume((float)(Volume_S.Value / 100));
+        }
+        //選択されている音声を再生
+        void Sound_Start()
+        {
+            if (Voice_FSB_File == "" || Voice_Add_List.SelectedIndex == -1)
+            {
+                return;
+            }
+            FModChannel.setPaused(true);
+            FModChannel = new FMOD_API.Channel();
+            SubSound.release();
+            MainSound.release();
+            Fmod_System.FModSystem.createSound(Voice_FSB_File, FMOD_API.MODE.CREATESTREAM, ref MainSound);
+            MainSound.getSubSound(Voice_Add_List.SelectedIndex, ref SubSound);
+            Fmod_System.FModSystem.playSound(FMOD_API.CHANNELINDEX.FREE, SubSound, true, ref FModChannel);
+            FModChannel.setVolume((float)(Volume_S.Value / 100));
+        }
+        //サウンドの現在の時間をテキストボックスに反映
+        void Set_Position_TextBlock(bool IsSetSoundPosition)
+        {
+            if (IsSetSoundPosition && !IsLocationMouseChange)
+            {
+                uint Position_Now = 0;
+                FModChannel.getPosition(ref Position_Now, FMOD_API.TIMEUNIT.MS);
+                Location_S.Value = Position_Now;
+            }
+            TimeSpan Time = TimeSpan.FromMilliseconds(Location_S.Value);
+            string Minutes = Time.Minutes.ToString();
+            string Seconds = Time.Seconds.ToString();
+            if (Time.Minutes < 10)
+            {
+                Minutes = "0" + Time.Minutes;
+            }
+            if (Time.Seconds < 10)
+            {
+                Seconds = "0" + Time.Seconds;
+            }
+            Location_T.Text = Minutes + ":" + Seconds;
+        }
+        //音声の再生位置を変更
+        private void Location_Board_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            IsMouseDown = true;
+            FModChannel.getPaused(ref IsPause);
+            FModChannel.setPaused(true);
+            System.Drawing.Point p = new System.Drawing.Point();
+            int w = Screen.GetBounds(p).Width;
+            double Width_Display_From_1920 = (double)w / 1920;
+            int Location_Mouse_X_Display = Math.Abs((int)Location_S.PointToScreen(new Point()).X - System.Windows.Forms.Cursor.Position.X) - 10;
+            double Percent = Location_Mouse_X_Display / (260 * Width_Display_From_1920);
+            Location_S.Value = Location_S.Maximum * Percent;
+            FModChannel.setPosition((uint)Location_S.Value, FMOD_API.TIMEUNIT.MS);
+            if (!IsPause)
+            {
+                FModChannel.setPaused(false);
+            }
+            Set_Position_TextBlock(false);
+            IsMouseDown = false;
+        }
+        //マウスがある位置まで再生時間を移動
+        void Location_MouseDown(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            IsMouseDown = true;
+            FModChannel.getPaused(ref IsPause);
+            FModChannel.setPaused(true);
+            //計算大変だった...
+            System.Drawing.Point p = new System.Drawing.Point();
+            int w = Screen.GetBounds(p).Width;
+            double Width_Display_From_1920 = (double)w / 1920;
+            int Location_Mouse_X_Display = Math.Abs((int)Location_S.PointToScreen(new Point()).X - System.Windows.Forms.Cursor.Position.X) - 10;
+            double Percent = Location_Mouse_X_Display / (double)(260 * Width_Display_From_1920);
+            Location_S.Value = Location_S.Maximum * Percent;
+        }
+        //Sliderの位置をサウンドに反映
+        void Location_MouseUp(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            FModChannel.setPosition((uint)Location_S.Value, FMOD_API.TIMEUNIT.MS);
+            IsLocationMouseChange = true;
+            IsMouseDown = false;
+            if (!IsPause)
+            {
+                bool IsPauseNow = false;
+                FModChannel.getPaused(ref IsPauseNow);
+                if (IsPauseNow)
+                {
+                    FModChannel.setPaused(false);
+                }
+            }
+            Set_Position_TextBlock(true);
+            IsLocationMouseChange = false;
+        }
+        private void Location_S_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (IsMouseDown)
+            {
+                Set_Position_TextBlock(false);
+            }
         }
     }
 }

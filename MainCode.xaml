@@ -9,6 +9,108 @@
         WindowStartupLocation="CenterScreen"
         Icon="Icon.ico"
         Title="FSB_To_BNK" Height="1080" Width="1920">
+    <Window.Resources>
+        <SolidColorBrush x:Key="CyanBrush" Color="Gray"/>
+        <SolidColorBrush x:Key="PinkBrush" Color="Gray"/>
+        <SolidColorBrush x:Key="LimeBrush" Color="Gray"/>
+        <Style x:Key="SliderThumbStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Ellipse Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Slider}, Mode=FindAncestor}}" Width="25" Height="25"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CustomSliderStyle" TargetType="{x:Type Slider}">
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TickBar Grid.Row="0" x:Name="TopTick" Placement="Top" Visibility="Collapsed" Fill="{TemplateBinding Foreground}" Height="8" Opacity="0.64" Margin="0,0,0,2"/>
+                                    <TickBar Grid.Row="2" x:Name="BottomTick" Placement="Bottom" Visibility="Collapsed" Fill="{TemplateBinding Foreground}" Height="8" Opacity="0.64" Margin="0,2,0,0"/>
+                                    <Track Grid.Row="1" x:Name="PART_Track">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="Slider.DecreaseLarge" Background="Aqua" Height="5" BorderBrush="{x:Null}" Opacity="0.9"/>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="Slider.IncreaseLarge" Background="Gray" Height="5" BorderBrush="{x:Null}" Opacity="0.5"/>
+                                        </Track.IncreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource SliderThumbStyle}"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="Slider.TickPlacement" Value="TopLeft">
+                                        <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                    <Trigger Property="Slider.TickPlacement" Value="BottomRight">
+                                        <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                    <Trigger Property="Slider.TickPlacement" Value="Both">
+                                        <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="CustomSliderStyle2" TargetType="{x:Type Slider}">
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="25"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TickBar Grid.Row="0" x:Name="TopTick" Placement="Top" Visibility="Collapsed" Fill="{TemplateBinding Foreground}" Height="8" Opacity="0.64" Margin="0,0,0,2"/>
+                                    <TickBar Grid.Row="2" x:Name="BottomTick" Placement="Bottom" Visibility="Collapsed" Fill="{TemplateBinding Foreground}" Height="8" Opacity="0.64" Margin="0,2,0,0"/>
+                                    <Track Grid.Row="1" x:Name="PART_Track">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="Slider.DecreaseLarge" Background="Purple" Height="5" BorderBrush="{x:Null}" Opacity="1"/>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="Slider.IncreaseLarge" Background="Gray" Height="5" BorderBrush="{x:Null}" Opacity="0.5"/>
+                                        </Track.IncreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource SliderThumbStyle}"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="Slider.TickPlacement" Value="TopLeft">
+                                        <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                    <Trigger Property="Slider.TickPlacement" Value="BottomRight">
+                                        <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                    <Trigger Property="Slider.TickPlacement" Value="Both">
+                                        <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Viewbox Stretch="Fill">
         <DockPanel Width="1920" Height="1080">
             <Border BorderBrush="Aqua" BorderThickness="1" Background="#111117" Height="1080" VerticalAlignment="Top" Width="1920"/>
@@ -16,7 +118,7 @@
             <ListBox x:Name="FSB_Details_L" Height="750" VerticalAlignment="Top" Width="550" Margin="-3200,50,0,0" Background="Transparent" BorderBrush="Aqua" Foreground="Aqua" FontSize="37" MouseDown="FSB_Details_L_MouseDown"/>
             <Button x:Name="Voice_Select_B" Content="Select FSB" Height="75" VerticalAlignment="Top" Width="300" Background="Transparent" Foreground="Aqua" BorderBrush="Aqua" FontSize="37" Margin="-1785,100,0,0" Click="Voice_Select_B_Click"/>
             <TextBlock x:Name="Voice_Select_T" Height="50" TextWrapping="Wrap" Text="Not selected" VerticalAlignment="Top" Width="810" Foreground="Aqua" FontSize="37" Margin="-1785,200,0,0" TextAlignment="Center"/>
-            <ListBox x:Name="Voice_Add_List" Height="500" VerticalAlignment="Top" Width="450" Margin="-500,125,0,0" Background="Transparent" BorderBrush="Aqua" Foreground="Aqua" FontSize="37"/>
+            <ListBox x:Name="Voice_Add_List" Height="500" VerticalAlignment="Top" Width="450" Margin="-500,125,0,0" Background="Transparent" BorderBrush="Aqua" Foreground="Aqua" FontSize="37" SelectionChanged="Voice_Add_List_SelectionChanged"/>
             <TextBlock Height="50" TextWrapping="Wrap" Text="Voice Files" VerticalAlignment="Top" Width="175" Foreground="Aqua" FontSize="37" Margin="-500,70,0,0"/>
             <Button x:Name="Clear_B" Content="Clear" Height="70" VerticalAlignment="Top" Width="275" Background="Transparent" Foreground="Aqua" BorderBrush="Aqua" FontSize="35" Margin="-1920,1010,0,0" Click="Clear_B_Click"/>
             <Button x:Name="Help_B" Content="Attention" Height="70" VerticalAlignment="Top" Width="300" Background="Transparent" Foreground="Aqua" BorderBrush="Aqua" FontSize="35" Margin="-300,1010,0,0" Click="Help_B_Click"/>
@@ -26,7 +128,11 @@
             <TextBlock Height="50" TextWrapping="Wrap" Text="DVPL" VerticalAlignment="Top" Width="125" Foreground="Aqua" FontSize="37" Margin="-1900,297,0,0"/>
             <Button x:Name="Play_B" Content="Play" Height="70" VerticalAlignment="Top" Width="222" Background="Transparent" Foreground="Aqua" BorderBrush="Aqua" FontSize="37" Margin="-272,625,0,0" Click="Play_B_Click"/>
             <Button x:Name="Stop_B" Content="Stop" Height="70" VerticalAlignment="Top" Width="222" Background="Transparent" Foreground="Aqua" BorderBrush="Aqua" FontSize="37" Margin="-728,625,0,0" Click="Stop_B_Click"/>
-            <TextBlock x:Name="Volume_T" Height="50" TextWrapping="Wrap" Text="Volume:50" VerticalAlignment="Top" Width="296" Foreground="Aqua" FontSize="37" Margin="-2100,500,0,0" TextAlignment="Center"/>
+            <TextBlock x:Name="Volume_T" Height="50" TextWrapping="Wrap" Text="Volume:50" VerticalAlignment="Top" Width="296" Foreground="Aqua" FontSize="37" Margin="-2150,500,0,0" TextAlignment="Center"/>
+            <Slider x:Name="Volume_S" Height="27" VerticalAlignment="Top"  Width="275" Margin="-2150,575,0,0" Style="{StaticResource CustomSliderStyle}" SmallChange="1" LargeChange="1" Maximum="100" ValueChanged="Volume_S_ValueChanged"/>
+            <Border x:Name="Location_Board" BorderBrush="Aqua" BorderThickness="1" Background="Black" Height="27" Margin="-1450,575,0,0" VerticalAlignment="Top" Width="275" Opacity="0.001" MouseDown="Location_Board_MouseDown"/>
+            <TextBlock x:Name="Location_T" Height="50" Width="300" FontSize="40" Foreground="Aqua" TextWrapping="Wrap" Text="00:00" Margin="-1450,500,0,0" VerticalAlignment="Top" TextAlignment="Center"/>
+            <Slider x:Name="Location_S" Height="27" VerticalAlignment="Top"  Width="275" Margin="-1450,575,0,0" Style="{StaticResource CustomSliderStyle}" SmallChange="0" LargeChange="0" Maximum="0" ValueChanged="Location_S_ValueChanged"/>
         </DockPanel>
     </Viewbox>
 </Window>
