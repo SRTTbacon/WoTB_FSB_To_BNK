@@ -50,7 +50,7 @@ namespace WoTB_Voice_Mod_Creater.Class
             string Encode_Style = "-y -vn -ac 2 -ar 44100 -acodec pcm_s24le -f wav";
             StreamWriter stw = File.CreateText(Voice_Set.Special_Path + "/Encode_Mp3/Audio_Encode" + File_Number + ".bat");
             stw.WriteLine("chcp 65001");
-            stw.Write(Voice_Set.Special_Path + "/Encode_Mp3/ffmpeg.exe -i \"" + From_Files[File_Number] + "\" " + Encode_Style + " \"" + To_Dir + "\\" +
+            stw.Write("\"" + Voice_Set.Special_Path + "/Encode_Mp3/ffmpeg.exe\" -i \"" + From_Files[File_Number] + "\" " + Encode_Style + " \"" + To_Dir + "\\" +
                       Path.GetFileNameWithoutExtension(From_Files[File_Number]) + ".wav\"");
             stw.Close();
             ProcessStartInfo processStartInfo = new ProcessStartInfo

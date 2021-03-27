@@ -601,7 +601,7 @@ namespace WoTB_Voice_Mod_Creater
                 }
                 StreamWriter stw = File.CreateText(Voice_Set.Special_Path + "/Encode_Mp3/Audio_Encode.bat");
                 stw.WriteLine("chcp 65001");
-                stw.Write(Voice_Set.Special_Path + "/Encode_Mp3/ffmpeg.exe -i \"" + From_Audio_File + "\" " + Encode_Style + " \"" + To_Audio_File + "\"");
+                stw.Write("\"" + Voice_Set.Special_Path + "/Encode_Mp3/ffmpeg.exe\" -i \"" + From_Audio_File + "\" " + Encode_Style + " \"" + To_Audio_File + "\"");
                 stw.Close();
                 ProcessStartInfo processStartInfo = new ProcessStartInfo
                 {
