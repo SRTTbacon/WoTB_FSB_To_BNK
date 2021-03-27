@@ -193,8 +193,12 @@ namespace WoTB_FSB_To_BNK
             {
                 Sub_Code.Set_OpenFile_Path(Path.GetDirectoryName(ofd.FileName));
                 bool IsVoiceExist = false;
+                FModChannel.setPaused(true);
+                FModChannel = new FMOD_API.Channel();
                 SubSound.release();
                 MainSound.release();
+                SubSound = new FMOD_API.Sound();
+                MainSound = new FMOD_API.Sound();
                 Location_T.Text = "00:00";
                 Location_S.Value = 0;
                 Location_S.Maximum = 0;
@@ -217,7 +221,7 @@ namespace WoTB_FSB_To_BNK
                 }
                 Voice_FSB_File = ofd.FileName;
                 FSB_Details_L.Items[0] = "FSB File:" + Path.GetFileName(ofd.FileName);
-                FSB_Details_L.Items[1] = "Number of voices:" + Voices.Count + "個";
+                FSB_Details_L.Items[1] = "Number of voices:" + Voices.Count;
                 Voice_Select_T.Text = Path.GetFileName(ofd.FileName);
                 Voices.Clear();
             }
@@ -361,6 +365,7 @@ namespace WoTB_FSB_To_BNK
                 Message_Feed_Out("An error has occurred. See Log.txt for details.");
             }
             IsClosing = false;
+            Position_Change();
         }
         private void FSB_Details_L_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -412,6 +417,8 @@ namespace WoTB_FSB_To_BNK
             FModChannel = new FMOD_API.Channel();
             SubSound.release();
             MainSound.release();
+            SubSound = new FMOD_API.Sound();
+            MainSound = new FMOD_API.Sound();
             Fmod_System.FModSystem.createSound(Voice_FSB_File, FMOD_API.MODE.CREATESTREAM, ref MainSound);
             MainSound.getSubSound(Voice_Add_List.SelectedIndex, ref SubSound);
             Fmod_System.FModSystem.playSound(FMOD_API.CHANNELINDEX.FREE, SubSound, true, ref FModChannel);
